@@ -6,6 +6,7 @@ import { GlyphPreview } from "./glyph-preview";
 import { GridControls } from "./grid-controls";
 import { StyleControls } from "./style-controls";
 import type { GridLineEditor } from "./use-grid-line-gesture";
+import { GLYPHS } from "../../../modules/typeface";
 import "./type-studio.css";
 
 export function TypeStudio() {
@@ -36,24 +37,24 @@ export function TypeStudio() {
   return (
     <main className="studio">
       <header className="studio-header">
-        <h1>Modular Type</h1>
+        <h1 className="studio-title">Modulartype<span className="title-star" aria-hidden="true">✳</span></h1>
         <div className="header-actions">
           <button
             type="button"
             disabled={!session.past.length}
             onClick={() => dispatch({ type: "undo" })}
           >
-            Undo
+            <span aria-hidden="true">↶</span> Undo
           </button>
           <button
             type="button"
             disabled={!session.future.length}
             onClick={() => dispatch({ type: "redo" })}
           >
-            Redo
+            <span aria-hidden="true">↷</span> Redo
           </button>
-          <button type="button" onClick={generate}>
-            Generate
+          <button className="generate-button" type="button" onClick={generate}>
+            <span aria-hidden="true">✳</span> Generate
           </button>
           <button type="button" onClick={() => setPreviewOpen(true)}>
             Preview
@@ -64,7 +65,7 @@ export function TypeStudio() {
             disabled={exportState.busy}
             onClick={download}
           >
-            {exportState.busy ? "Exporting…" : "Export OTF"}
+            {exportState.busy ? "Exporting…" : "Export OTF ↗"}
           </button>
         </div>
       </header>
@@ -90,12 +91,7 @@ export function TypeStudio() {
       <div className="studio-layout">
         <section className="glyph-workspace" aria-label="Glyph editor">
           <div className="canvas-toolbar">
-            <GlyphSelector
-              selected={glyph}
-              onSelect={(selectedGlyph) =>
-                dispatch({ type: "view", patch: { selectedGlyph } })
-              }
-            />
+            <div className="workspace-label"><span className="status-dot" />Glyph editor</div>
             <div className="canvas-actions">
               <button
                 className="reset-glyph"
@@ -120,6 +116,7 @@ export function TypeStudio() {
             </div>
           </div>
           <div className="glyph-canvas">
+            <div className="canvas-coordinate coordinate-top" aria-hidden="true">[{glyph}]<span>U+{glyph.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}</span></div>
             <GlyphPreview
               key={`${glyph}-${view.showGrid}-${current.project.seed}`}
               glyph={current.glyphs[glyph]}
@@ -134,6 +131,15 @@ export function TypeStudio() {
               }
               onDisconnectPoints={(from, to) =>
                 dispatch({ type: "disconnect-points", glyph, from, to })
+              }
+            />
+          </div>
+          <div className="glyph-bank">
+            <div className="bank-heading"><span>Characters</span><span>{GLYPHS.length} glyphs</span></div>
+            <GlyphSelector
+              selected={glyph}
+              onSelect={(selectedGlyph) =>
+                dispatch({ type: "view", patch: { selectedGlyph } })
               }
             />
           </div>
@@ -152,6 +158,10 @@ export function TypeStudio() {
           </StyleControls>
         </aside>
       </div>
+
+      <footer className="studio-footer">
+        <span>made with 🤖 by <a href="https://alex-boulanger.dev">alex-boulanger.dev</a></span>
+      </footer>
 
       <FontPreview
         typeface={current}
