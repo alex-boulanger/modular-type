@@ -1,27 +1,38 @@
-import { BASELINE_ROW, GRID_COLUMNS, GRID_ROWS, X_HEIGHT_ROW } from '../../../modules/typeface'
+import { BASELINE_ROW, GRID_COLUMNS, GRID_ROWS, X_HEIGHT_ROW, isGridLineMovable } from '../../../modules/typeface'
 import type { GlyphOutline } from '../../../modules/typeface'
+import { useGridLineGesture } from './use-grid-line-gesture'
+import type { GridLineEditor } from './use-grid-line-gesture'
 import { useNodeGesture } from './use-node-gesture'
 
 interface GlyphPreviewProps {
   glyph: GlyphOutline
   unitsPerEm: number
   inspect: boolean
+  lineEditor: GridLineEditor
   onTogglePoint: (pointId: number) => void
   onConnectPoints: (from: number, to: number) => void
   onDisconnectPoints: (from: number, to: number) => void
 }
 
-export function GlyphPreview({ glyph, unitsPerEm, inspect, onTogglePoint, onConnectPoints, onDisconnectPoints }: GlyphPreviewProps) {
+const AXES = ['column', 'row'] as const
+
+export function GlyphPreview({ glyph: committed, unitsPerEm, inspect, lineEditor, onTogglePoint, onConnectPoints, onDisconnectPoints }: GlyphPreviewProps) {
   const scale = unitsPerEm / 1000
-  const grid = glyph.construction.grid
-  // Anchor the canvas to the logical grid, not the ink bounds: removing an
-  // outside module must never move the next click target under the pointer.
-  const gridCenter = (grid[0].position[0] + grid[GRID_COLUMNS - 1].position[0]) / 2
-  const offset = 400 * scale - gridCenter
   const {
     drawingRef, preview, onPointerMove, onPointerUp, onPointerCancel,
     onLostPointerCapture, onKeyDown, onPointPointerDown, onPointFocus, onPointKeyDown,
-  } = useNodeGesture(grid, scale, onTogglePoint, onConnectPoints)
+  } = useNodeGesture(committed.construction.grid, scale, onTogglePoint, onConnectPoints)
+  // While a grid line is dragged, the canvas shows its uncommitted outline.
+  const { glyph, active, positionOf, handleProps } = useGridLineGesture(committed, drawingRef, lineEditor)
+  const { grid, lines } = glyph.construction
+  // Anchor the canvas to the grid frame, not the ink bounds: removing an
+  // outside module must never move the next click target under the pointer.
+  const gridCenter = (lines.columns[0] + lines.columns[GRID_COLUMNS - 1]) / 2
+  const offset = 400 * scale - gridCenter
+  // Line handles live in the canvas margins, clear of the nodes: columns
+  // above the ascender, rows at the left edge of the view.
+  const top = 800 * scale
+  const left = -80 * scale - offset
 
   return (
     <svg viewBox={`${-80 * scale} ${-40 * scale} ${960 * scale} ${1120 * scale}`} role="group" aria-label={`Edit glyph ${glyph.char}`}
@@ -29,14 +40,9 @@ export function GlyphPreview({ glyph, unitsPerEm, inspect, onTogglePoint, onConn
       onPointerCancel={onPointerCancel} onLostPointerCapture={onLostPointerCapture} onKeyDown={onKeyDown}>
       <g ref={drawingRef} transform={`translate(${offset} ${800 * scale}) scale(1 -1)`}>
         {inspect && <g className="construction-grid" aria-hidden="true">
-          {Array.from({ length: GRID_ROWS }, (_, row) => {
-            const start = grid[row * GRID_COLUMNS].position
-            return <line className={row === BASELINE_ROW ? 'baseline' : row === X_HEIGHT_ROW ? 'x-height' : undefined} key={`row-${row}`} x1={-800 * scale} y1={start[1]} x2={1600 * scale} y2={start[1]} />
-          })}
-          {Array.from({ length: GRID_COLUMNS }, (_, column) => {
-            const start = grid[column].position
-            return <line key={`column-${column}`} x1={start[0]} y1={-800 * scale} x2={start[0]} y2={1600 * scale} />
-          })}
+          {lines.rows.map((y, row) => <line className={row === BASELINE_ROW ? 'baseline' : row === X_HEIGHT_ROW ? 'x-height' : undefined}
+            key={`row-${row}`} x1={-800 * scale} y1={y} x2={1600 * scale} y2={y} />)}
+          {lines.columns.map((x, column) => <line key={`column-${column}`} x1={x} y1={-800 * scale} x2={x} y2={1600 * scale} />)}
         </g>}
         <path d={glyph.pathData} fill="currentColor" fillRule="nonzero" className="glyph-outline" />
         {inspect && <g className="connection-targets">
@@ -68,6 +74,33 @@ export function GlyphPreview({ glyph, unitsPerEm, inspect, onTogglePoint, onConn
               <circle className="point-marker" r={(active ? 5 : 3.5) * scale} />
             </g>
           ))}
+        </g>}
+        {inspect && <g className="grid-handles">
+          {AXES.flatMap(axis => (axis === 'column' ? lines.columns : lines.rows).map((value, line) => {
+            // The frame and baseline never move, so they get no handle.
+            if (!isGridLineMovable(axis, line)) return null
+            const dragging = active?.axis === axis && active.line === line
+            return (
+              <g key={`${axis}-${line}`} role="slider" tabIndex={0}
+                aria-label={`${axis === 'column' ? 'Column' : 'Row'} line ${line + 1}`}
+                aria-orientation={axis === 'column' ? 'horizontal' : 'vertical'}
+                aria-valuemin={0} aria-valuemax={axis === 'column' ? GRID_COLUMNS - 1 : GRID_ROWS - 1}
+                aria-valuenow={Math.round(positionOf(axis, line) * 100) / 100}
+                className={`grid-handle is-${axis}${dragging ? ' is-dragging' : ''}`}
+                {...handleProps(axis, line)}>
+                <title>Drag to move this line; arrow keys nudge it. Double-click or press Delete to reset it.</title>
+                {axis === 'column' ? <>
+                  <line className="handle-guide" x1={value} y1={-800 * scale} x2={value} y2={top} />
+                  <path className="handle-tab" d={`M${value} ${top + 2 * scale}l${7 * scale} ${10 * scale}v${20 * scale}h${-14 * scale}v${-20 * scale}z`} />
+                  <rect className="handle-hit" x={value - 14 * scale} y={top} width={28 * scale} height={40 * scale} />
+                </> : <>
+                  <line className="handle-guide" x1={left + 40 * scale} y1={value} x2={1600 * scale} y2={value} />
+                  <path className="handle-tab" d={`M${left + 40 * scale} ${value}l${-10 * scale} ${7 * scale}h${-20 * scale}v${-14 * scale}h${20 * scale}z`} />
+                  <rect className="handle-hit" x={left} y={value - 14 * scale} width={46 * scale} height={28 * scale} />
+                </>}
+              </g>
+            )
+          }))}
         </g>}
       </g>
     </svg>

@@ -1,5 +1,8 @@
-import { adjustTypeface, clearGlyphDrawing, connectGlyphPoints, createDefaultTypeface, disconnectGlyphPoints, generateTypeface, resetGlyphDrawing, restoreTypeface, toggleGlyphPoint } from '../../../modules/typeface'
-import type { FontProject, FontStyle, GlyphChar, Typeface } from '../../../modules/typeface'
+import {
+  adjustTypeface, clearGlyphDrawing, connectGlyphPoints, createDefaultTypeface, disconnectGlyphPoints, generateTypeface,
+  moveGridLine, randomizeGrid, resetGlyphDrawing, resetGrid, resetGridLine, restoreTypeface, toggleGlyphPoint,
+} from '../../../modules/typeface'
+import type { FontProject, FontStyle, GlyphChar, GridAxis, Typeface } from '../../../modules/typeface'
 
 export interface StudioView {
   selectedGlyph: GlyphChar
@@ -10,7 +13,8 @@ export interface StudioSession {
   current: Typeface
   past: FontProject[]
   future: FontProject[]
-  adjustment: keyof FontStyle | null
+  /** Continuous edit in progress (a slider or a held arrow key); its steps share one undo entry. */
+  adjustment: string | null
   view: StudioView
   notice: string | null
 }
@@ -22,6 +26,10 @@ export type StudioAction =
   | { type: 'toggle-point'; glyph: GlyphChar; pointId: number }
   | { type: 'connect-points' | 'disconnect-points'; glyph: GlyphChar; from: number; to: number }
   | { type: 'reset-glyph' | 'clear-glyph'; glyph: GlyphChar }
+  | { type: 'move-grid-line'; axis: GridAxis; line: number; position: number; continuous: boolean }
+  | { type: 'reset-grid-line'; axis: GridAxis; line: number }
+  | { type: 'randomize-grid'; seed: number }
+  | { type: 'reset-grid' }
   | { type: 'restore'; project: unknown }
   | { type: 'undo' | 'redo' }
   | { type: 'view'; patch: Partial<StudioView> }
@@ -61,6 +69,14 @@ export function transition(session: StudioSession, action: StudioAction): Studio
       case 'disconnect-points': return commit(session, disconnectGlyphPoints(session.current, action.glyph, action.from, action.to))
       case 'reset-glyph': return commit(session, resetGlyphDrawing(session.current, action.glyph))
       case 'clear-glyph': return commit(session, clearGlyphDrawing(session.current, action.glyph))
+      case 'move-grid-line': {
+        const { axis, line, position, continuous } = action
+        // Held arrow keys nudge the same line repeatedly: one undo step until key up.
+        return commit(session, moveGridLine(session.current, axis, line, position), continuous ? `grid:${axis}:${line}` : null)
+      }
+      case 'reset-grid-line': return commit(session, resetGridLine(session.current, action.axis, action.line))
+      case 'randomize-grid': return commit(session, randomizeGrid(session.current, action.seed))
+      case 'reset-grid': return commit(session, resetGrid(session.current))
       case 'restore': return commit(session, restoreTypeface(action.project))
       case 'undo': {
         const project = session.past.at(-1)

@@ -2,6 +2,7 @@ import { ENGINE_VERSION, normalizeStyle } from './style'
 import { GLYPHS } from './catalog'
 import { generateProject } from './generator'
 import { GRID_SIZE, initialGlyphConnections, initialGlyphPoints, migrateGlyphConnections } from './drawing'
+import { readGridSpacing, regularGrid } from './grid'
 import type { DesignDNA, FontProject, FontStyle, GridConnection } from './types'
 
 function object(value: unknown): Record<string, unknown> {
@@ -23,7 +24,8 @@ export function readProject(value: unknown): FontProject {
   const legacyLinks = project.schemaVersion === 3 && project.engineVersion === '3.2.0'
   const legacyAlphabet = project.schemaVersion === 4 && project.engineVersion === '4.0.0'
   const oldAlphabet = legacy || legacyPoints || legacyLinks || legacyAlphabet
-  if (!oldAlphabet && (project.schemaVersion !== 5 || project.engineVersion !== ENGINE_VERSION)) {
+  const regularOnly = oldAlphabet || (project.schemaVersion === 5 && project.engineVersion === '5.0.0')
+  if (!regularOnly && (project.schemaVersion !== 6 || project.engineVersion !== ENGINE_VERSION)) {
     throw new Error('This project uses an incompatible engine version.')
   }
   if (typeof project.seed !== 'number' || !Number.isInteger(project.seed) || project.seed < 0 || project.seed > 0xffffffff) {
@@ -40,6 +42,8 @@ export function readProject(value: unknown): FontProject {
   if (connectionStyle !== 'union' && connectionStyle !== 'bridge') throw new Error('Unknown connection style.')
   const style: FontStyle = normalizeStyle({
     width: unit(rawStyle.width), height: unit(rawStyle.height), moduleSize: unit(rawStyle.moduleSize),
+    // Saves from before Cell fit had nodes filling their cells.
+    cellFit: rawStyle.cellFit === undefined ? 1 : unit(rawStyle.cellFit),
     spacing: unit(rawStyle.spacing), roundness: unit(rawStyle.roundness), contrast: unit(rawStyle.contrast),
     connectionStyle,
   })
@@ -91,8 +95,11 @@ export function readProject(value: unknown): FontProject {
     }
   }
   return {
-    schemaVersion: 5, engineVersion: ENGINE_VERSION, seed: project.seed,
-    generation: { dna }, style, glyphVariants, glyphPoints,
+    schemaVersion: 6, engineVersion: ENGINE_VERSION, seed: project.seed,
+    generation: { dna }, style,
+    // Saves from before the adaptive grid keep the regular grid they were drawn on.
+    grid: regularOnly ? regularGrid() : readGridSpacing(project.grid),
+    glyphVariants, glyphPoints,
     glyphConnections: legacy || legacyPoints || legacyLinks
       ? migrateGlyphConnections(glyphVariants, glyphPoints, glyphConnections) : glyphConnections,
   }
@@ -102,7 +109,7 @@ export function identifyStyle(project: FontProject): string {
   // Only effective geometry matters: editing the view or generation metadata
   // must not rename an otherwise identical font.
   const source = JSON.stringify([
-    project.engineVersion, project.style,
+    project.engineVersion, project.style, project.grid,
     GLYPHS.map(char => [project.glyphVariants[char], project.glyphPoints[char], project.glyphConnections[char]]),
   ])
   let hash = 0x811c9dc5

@@ -1,6 +1,6 @@
 import type { ContinuousControl, FontStyle } from './types'
 
-export const ENGINE_VERSION = '5.0.0'
+export const ENGINE_VERSION = '6.0.0'
 // Design coordinates use a 1000-unit frame; canonical outlines have 4× the
 // resolution so integer font encoding does not visibly roughen the curves.
 export const OUTLINE_SCALE = 4
@@ -10,6 +10,7 @@ export const CONTROLS: readonly { key: ContinuousControl; label: string; low: st
   { key: 'width', label: 'Width', low: 'Narrow', high: 'Wide', description: 'Stretch the grid horizontally.' },
   { key: 'height', label: 'Height', low: 'Short', high: 'Tall', description: 'Stretch the grid vertically while keeping the font size fixed.' },
   { key: 'moduleSize', label: 'Weight', low: 'Light', high: 'Heavy', description: 'Thicken the modules and their connections.' },
+  { key: 'cellFit', label: 'Cell fit', low: 'Uniform', high: 'Fitted', description: 'Let each node take the size of its grid cell, or keep every node the same size.' },
   { key: 'spacing', label: 'Spacing', low: 'Tight', high: 'Open', description: 'Shrink modules around fixed nodes to open up the spaces inside letters.' },
   { key: 'roundness', label: 'Roundness', low: 'Sharp', high: 'Soft', description: 'Deepen the concave joins between circular modules.' },
   { key: 'contrast', label: 'Contrast', low: 'Even', high: 'Strong', description: 'Thicken vertical strokes and thin horizontal strokes, with diagonals in between.' },

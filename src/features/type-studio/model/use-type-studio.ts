@@ -1,7 +1,10 @@
 import { useEffect, useReducer, useState } from 'react'
-import { exportTypeface } from '../../../modules/typeface'
+import { exportTypeface, previewGridLine } from '../../../modules/typeface'
+import type { GlyphOutline, GridAxis } from '../../../modules/typeface'
 import { loadSession, saveSession } from './persistence'
 import { transition } from './session'
+
+const randomSeed = () => window.crypto.getRandomValues(new Uint32Array(1))[0]
 
 export function useTypeStudio() {
   const [session, dispatch] = useReducer(transition, undefined, loadSession)
@@ -19,9 +22,17 @@ export function useTypeStudio() {
     }
   }, [session])
 
-  const generate = () => {
-    const [seed] = window.crypto.getRandomValues(new Uint32Array(1))
-    dispatch({ type: 'generate', seed })
+  const generate = () => dispatch({ type: 'generate', seed: randomSeed() })
+
+  const randomizeGrid = () => dispatch({ type: 'randomize-grid', seed: randomSeed() })
+
+  /** Outline of the selected letter while a grid line is dragged; the project changes only on release. */
+  const previewLine = (axis: GridAxis, line: number, position: number): GlyphOutline | null => {
+    try {
+      return previewGridLine(session.current, session.view.selectedGlyph, axis, line, position)
+    } catch {
+      return null
+    }
   }
 
   const download = async () => {
@@ -44,5 +55,5 @@ export function useTypeStudio() {
     }
   }
 
-  return { session, dispatch, generate, download, exportState, storageError }
+  return { session, dispatch, generate, randomizeGrid, previewLine, download, exportState, storageError }
 }

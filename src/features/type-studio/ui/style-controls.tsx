@@ -1,7 +1,16 @@
+import type { ReactNode } from 'react'
 import { CONTROLS } from '../../../modules/typeface'
 import type { FontStyle } from '../../../modules/typeface'
 
-export function StyleControls({ style, onChange, onCommit }: { style: FontStyle; onChange: (patch: Partial<FontStyle>) => void; onCommit: () => void }) {
+interface StyleControlsProps {
+  style: FontStyle
+  onChange: (patch: Partial<FontStyle>) => void
+  onCommit: () => void
+  /** Extra sections shown between the connection style and the sliders. */
+  children?: ReactNode
+}
+
+export function StyleControls({ style, onChange, onCommit, children }: StyleControlsProps) {
   return (
     <div className="style-controls" onPointerUp={onCommit} onPointerCancel={onCommit} onKeyUp={onCommit} onBlur={onCommit}>
       <fieldset>
@@ -11,6 +20,7 @@ export function StyleControls({ style, onChange, onCommit }: { style: FontStyle;
           <button type="button" aria-pressed={style.connectionStyle === 'bridge'} onClick={() => onChange({ connectionStyle: 'bridge' })}>Bridge</button>
         </div>
       </fieldset>
+      {children}
       <div className="sliders">
         {CONTROLS.map(control => (
           <div className="slider-control" key={control.key}>

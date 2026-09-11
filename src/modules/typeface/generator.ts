@@ -1,10 +1,11 @@
 import { clamp, ENGINE_VERSION } from './style'
 import { GLYPHS, mapGlyphs } from './catalog'
 import { initialGlyphConnections, initialGlyphPoints } from './drawing'
+import { randomGrid } from './grid'
 import type { DesignDNA, FontProject, FontStyle } from './types'
 
 // Mulberry32: randomness is local to a generation, never global engine state.
-function randomSource(seed: number) {
+export function randomSource(seed: number) {
   let state = seed >>> 0
   return () => {
     state = (state + 0x6d2b79f5) >>> 0
@@ -24,6 +25,8 @@ export function generateProject(seed: number): FontProject {
     width: dna.width,
     height: clamp(0.45 + (random() - 0.3) * 0.7),
     moduleSize: 0.6 + dna.density * 0.4,
+    // Nodes fill their cells, so the grid Generate draws shows in module sizes too.
+    cellFit: 1,
     spacing: 0.35 - dna.density * 0.25,
     roundness: 0.75 + dna.softness * 0.25,
     contrast: dna.contrast * 0.4,
@@ -35,11 +38,13 @@ export function generateProject(seed: number): FontProject {
     if (random() < dna.weirdness * 0.25) glyphVariants[char] = variant === 0 ? 1 : 0
   }
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     engineVersion: ENGINE_VERSION,
     seed: seed >>> 0,
     generation: { dna },
     style,
+    // Drawn after the style and recipes: the grid varies without changing what a seed selects.
+    grid: randomGrid(random),
     glyphVariants,
     glyphPoints: initialGlyphPoints(glyphVariants),
     glyphConnections: initialGlyphConnections(glyphVariants),

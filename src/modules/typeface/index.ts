@@ -1,14 +1,19 @@
 import { buildGlyph } from './geometry'
 import { GRID_SIZE, initialGlyphConnections, initialGlyphPoints, normalizeConnections } from './drawing'
-import { generateProject } from './generator'
+import { generateProject, randomSource } from './generator'
+import { randomGrid, regularGrid, withGridLine } from './grid'
 import { identifyStyle, readProject } from './project'
 import { METRICS, normalizeStyle } from './style'
 import { GLYPHS, mapGlyphs } from './catalog'
-import type { FontProject, FontStyle, GlyphChar, GridConnection, Typeface } from './types'
+import type { FontProject, FontStyle, GlyphChar, GlyphOutline, GridAxis, GridConnection, Typeface } from './types'
 
 export { GLYPHS, GLYPH_GROUPS } from './catalog'
 export { GRID_COLUMNS, GRID_ROWS, BASELINE_ROW, X_HEIGHT_ROW } from './drawing'
-export type { ContinuousControl, FontArtifact, FontProject, FontStyle, GlyphChar, GlyphOutline, GridConnection, GridNode, Typeface } from './types'
+export { isGridLineMovable } from './grid'
+export type {
+  ContinuousControl, FontArtifact, FontProject, FontStyle, GlyphChar, GlyphOutline,
+  GridAxis, GridConnection, GridLines, GridNode, GridSpacing, Typeface,
+} from './types'
 export { CONTROLS } from './style'
 export { exportTypeface } from './export'
 
@@ -127,6 +132,40 @@ export function resetGlyphDrawing(typeface: Typeface, char: GlyphChar): Typeface
     glyphConnections: { ...typeface.project.glyphConnections, [char]: connections },
   }
   return recompileGlyph(typeface, char, project)
+}
+
+/** Every letter shares the grid, so a grid change recompiles the whole font. */
+function applyGrid(typeface: Typeface, project: FontProject): Typeface {
+  return JSON.stringify(project.grid) === JSON.stringify(typeface.project.grid) ? typeface : compile(project)
+}
+
+/**
+ * Move a grid line to a position in grid units: 0 to 4 across the columns,
+ * 0 to 8 down the rows. The line stops short of its neighbours; locked lines throw.
+ */
+export function moveGridLine(typeface: Typeface, axis: GridAxis, line: number, position: number): Typeface {
+  return applyGrid(typeface, withGridLine(typeface.project, axis, line, position))
+}
+
+/** One letter as it would look with a line moved, for live drag previews. Nothing is committed. */
+export function previewGridLine(typeface: Typeface, char: GlyphChar, axis: GridAxis, line: number, position: number): GlyphOutline {
+  if (!GLYPHS.includes(char)) throw new Error('Unknown glyph.')
+  return buildGlyph(char, withGridLine(typeface.project, axis, line, position))
+}
+
+/** Return a line to its place on the regular grid. */
+export function resetGridLine(typeface: Typeface, axis: GridAxis, line: number): Typeface {
+  return applyGrid(typeface, withGridLine(typeface.project, axis, line, line))
+}
+
+/** Draw a new grid from a seed. */
+export function randomizeGrid(typeface: Typeface, seed: number): Typeface {
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error('Invalid seed.')
+  return applyGrid(typeface, { ...typeface.project, grid: randomGrid(randomSource(seed)) })
+}
+
+export function resetGrid(typeface: Typeface): Typeface {
+  return applyGrid(typeface, { ...typeface.project, grid: regularGrid() })
 }
 
 /** Treat persisted input as untrusted. Never reapply DNA over manual edits. */
