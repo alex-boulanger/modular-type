@@ -1,0 +1,75 @@
+.studio { height: 100dvh; display: flex; flex-direction: column; }
+.studio-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+.studio-header h1 { font-size: 15px; font-weight: 600; letter-spacing: -.4px; }
+.header-actions { display: flex; gap: 8px; }
+.header-actions button { padding: 9px 14px; border: 1px solid var(--line); border-radius: 4px; background: transparent; font-size: 12px; }
+.header-actions button:hover:not(:disabled) { border-color: var(--ink); }
+.header-actions .export-button { color: white; background: var(--ink); border-color: var(--ink); }
+.studio-layout { display: grid; grid-template-columns: minmax(0, 1fr) 270px; flex: 1; min-height: 0; }
+.glyph-workspace { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #f0f0f2; }
+.canvas-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 24px; }
+.canvas-actions { display: flex; flex-shrink: 0; align-items: center; gap: 12px; padding-top: 2px; }
+.reset-glyph { border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; background: transparent; font-size: 11px; }
+.reset-glyph:hover { border-color: var(--ink); }
+.character-picker { min-width: 0; max-width: 560px; }
+.character-groups { display: flex; gap: 6px; margin-bottom: 10px; }
+.character-groups button { padding: 6px 10px; border: 1px solid transparent; border-radius: 4px; background: transparent; font-size: 12px; color: var(--muted); }
+.character-groups button[aria-pressed='true'] { background: var(--ink); color: white; }
+.glyph-selector { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 3px; }
+.glyph-selector button { min-width: 0; width: 100%; height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 4px; background: transparent; font-size: 14px; }
+.glyph-selector button[aria-pressed='true'] { border-color: var(--ink); background: white; }
+.glyph-selector button:hover { background: #fff8; }
+.grid-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.grid-toggle input { accent-color: var(--ink); }
+.glyph-canvas { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 32px 24px; overflow: hidden; }
+.glyph-canvas svg { width: 100%; height: 100%; max-height: 850px; }
+.construction-grid { stroke: #b9bdd8; fill: #a3a5b2; }
+.construction-grid line { vector-effect: non-scaling-stroke; stroke-width: 1; }
+.construction-grid .baseline { stroke: #777b9e; stroke-width: 1.5; }
+.construction-grid .x-height { stroke-dasharray: 4 5; }
+.construction-grid circle { stroke: none; }
+.glyph-outline { pointer-events: none; }
+.grid-point { cursor: crosshair; outline: none; touch-action: none; user-select: none; }
+.point-hit { fill: transparent; pointer-events: all; }
+.point-marker { fill: #a3a5b2; pointer-events: none; vector-effect: non-scaling-stroke; }
+.grid-point.is-active .point-marker { fill: #f0f0f2; stroke: #686899; stroke-width: 1.5; }
+.grid-point:hover .point-hit, .grid-point:focus-visible .point-hit { fill: #9393ba30; stroke: #8181ac; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.grid-point:hover .point-marker, .grid-point:focus-visible .point-marker { fill: #7777aa; stroke: #fff; stroke-width: 1; }
+.connection-preview { stroke: #8181ac; stroke-width: 2; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.connection-preview.has-target { stroke: #635ec2; stroke-dasharray: none; }
+.grid-point.is-source .point-hit, .grid-point.is-target .point-hit { fill: #9393ba30; stroke: #8181ac; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.control-panel { border-left: 1px solid var(--line); padding: 26px 22px; overflow-y: auto; }
+legend { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.style-controls > fieldset + fieldset { margin-top: 24px; }
+.segmented { display: flex; gap: 3px; border: 1px solid var(--line); padding: 3px; border-radius: 5px; }
+.segmented button { flex: 1; border: none; padding: 9px 3px; border-radius: 3px; background: transparent; font-size: 11px; }
+.segmented button:hover { background: #ebebeb; }
+.segmented button[aria-pressed='true'] { background: var(--ink); color: white; }
+.sliders { padding-top: 6px; }
+.slider-control { margin-top: 25px; }
+.slider-heading { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.slider-heading output { font: 11px var(--mono); color: var(--muted); }
+.slider-control input { appearance: none; display: block; background: transparent; height: 26px; width: 100%; margin: 5px 0 0; cursor: ew-resize; }
+.slider-control input::-webkit-slider-runnable-track { height: 5px; border-radius: 5px; background: #dedee1; }
+.slider-control input::-moz-range-track { height: 5px; border-radius: 5px; background: #dedee1; }
+.slider-control input::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--ink); margin-top: -4px; }
+.slider-control input::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; border: none; background: var(--ink); }
+.slider-control input:disabled { cursor: default; }
+.export-status { font-size: 11px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; margin-top: 24px; }
+.export-status:empty { display: none; }
+.notice { display: flex; align-items: center; justify-content: space-between; background: #fff0d8; padding: 10px 24px; font-size: 12px; line-height: 1.5; }
+.notice button { background: none; border: none; font-size: 22px; margin-left: 15px; }
+@media (max-width: 700px) {
+  .studio { height: auto; min-height: 100dvh; }
+  .studio-header { padding: 14px; flex-wrap: wrap; }
+  .canvas-toolbar { padding: 14px; flex-wrap: wrap; gap: 12px; }
+  .character-picker { width: 100%; max-width: none; }
+  .glyph-selector button { padding: 0; }
+  .canvas-actions { margin-left: auto; }
+  .header-actions { gap: 4px; }
+  .header-actions button { padding: 8px; font-size: 11px; }
+  .studio-layout { grid-template-columns: 1fr; }
+  .glyph-canvas { height: 58dvh; flex: none; padding: 0 10px 20px; }
+  .control-panel { border-left: none; border-top: 1px solid var(--line); padding: 22px; }
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+}

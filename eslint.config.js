@@ -19,4 +19,22 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/features/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{ group: ['**/modules/typeface/**'], message: 'Importer uniquement l’entrée publique modules/typeface.' }],
+      }],
+    },
+  },
+  {
+    files: ['src/modules/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: ['react', 'react-dom', 'react-dom/client'],
+        patterns: ['**/features/**'],
+      }],
+      'no-restricted-globals': ['error', 'window', 'document', 'localStorage'],
+    },
+  },
 ])
